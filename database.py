@@ -7,7 +7,7 @@ conn_params = {
     'user': 'postgres_m',
     'password': 'mypassword',
     'host': '10.7.0.5',
-    'port': '1000'
+    'port': '5432'
 }
 
 
