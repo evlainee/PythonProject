@@ -1,0 +1,55 @@
+<!-- templates/customers.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Customers</title>
+        <style>
+        /* Общие стили для навигации */
+        nav {
+            background-color: #333;
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-around;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Стили для ссылок */
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        /* При наведении курсора */
+        nav a:hover {
+            background-color: #555;
+        }
+
+        /* Активная ссылка */
+        nav a.active {
+            background-color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/cinema/show/all">cinema</a>
+        <a href="/movies/show/all">movies</a>
+        <a href="/halls/show/all">halls</a>
+        <a href="/sessions/show/all">sessions</a>
+        <a href="/tickets/show/all">tickets</a>
+
+    </nav>
+    <h1>All Customers</h1>
+    <ul>
+        {% for customer in customers %}
+            <li>{{ customer.full_name }} - {{ customer.phone }} - {{ customer.email }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

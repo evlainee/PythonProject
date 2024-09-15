@@ -1,0 +1,308 @@
+<!-- templates/cinemas.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Cinemas</title>
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0,0,0);
+            background-color: rgba(0,0,0,0.4);
+            padding-top: 60px;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .filter {
+            margin-bottom: 10px;
+        }
+    </style>
+        <style>
+        /* Общие стили для навигации */
+        nav {
+            background-color: #333;
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-around;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Стили для ссылок */
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        /* При наведении курсора */
+        nav a:hover {
+            background-color: #555;
+        }
+
+        /* Активная ссылка */
+        nav a.active {
+            background-color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+     <nav>
+        <a href="/cinema/show/all">Cinemas</a>
+        <a href="/movies/show/all">Movies</a>
+        <a href="/halls/show/all">Halls</a>
+        <a href="/sessions/show/all">Sessions</a>
+        <a href="/tickets/show/all">Tickets</a>
+        <a href="/stats/cinema">Statistics</a>
+    </nav>
+    <h1>All Cinemas</h1>
+
+    <!-- Modal for adding a new cinema -->
+    <div id="addCinemaModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add New Cinema</h2>
+            <form id="addCinemaForm">
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" required><br><br>
+                <label for="address">Address:</label>
+                <input type="text" id="address" name="address" required><br><br>
+                <button type="submit">Add Cinema</button>
+            </form>
+        </div>
+    </div>
+
+     <div id="editCinemaModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Edit Cinema</h2>
+            <form id="editCinemaForm">
+                <input type="hidden" id="editCinemaId" name="id">
+                <label for="editName">Name:</label>
+                <input type="text" id="editName" name="name" required><br><br>
+                <label for="editAddress">Address:</label>
+                <input type="text" id="editAddress" name="address" required><br><br>
+                <button type="submit">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <button id="addCinemaBtn">Add Cinema</button>
+
+    <div class="filter">
+        <label for="sort">Sort by:</label>
+        <select id="sort">
+            <option value="name">Name</option>
+            <option value="address">Address</option>
+        </select>
+
+        <label for="search">Search:</label>
+        <input type="text" id="search">
+
+        <button onclick="applyFilters()">Apply Filters</button>
+    </div>
+
+    <table id="cinemas">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Address</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Cinemas will be dynamically added here -->
+        </tbody>
+    </table>
+
+    <script>
+        function fetchCinemas() {
+            fetch('/cinema/show/all/json')
+                .then(response => response.json())
+                .then(cinemas => {
+                    const tableBody = document.querySelector('#cinemas tbody');
+                    tableBody.innerHTML = '';
+                    cinemas.forEach(cinema => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${cinema.name}</td>
+                            <td>${cinema.address}</td>
+                            <td>
+                                <button onclick="editCinema(${cinema.cinema_id})">Edit</button>
+                                <button onclick="deleteCinema(${cinema.cinema_id})">Delete</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(error => console.error('Error fetching cinemas:', error));
+        }
+
+        function applyFilters() {
+            const sortBy = document.getElementById('sort').value;
+            const searchQuery = document.getElementById('search').value.toLowerCase();
+
+            fetch('/cinema/show/all/json')
+                .then(response => response.json())
+                .then(cinemas => {
+                    let filteredCinemas = cinemas;
+
+                    // Filter by search query
+                    filteredCinemas = filteredCinemas.filter(cinema =>
+                        cinema.name.toLowerCase().includes(searchQuery) ||
+                        cinema.address.toLowerCase().includes(searchQuery)
+                    );
+
+                    // Sort cinemas
+                    filteredCinemas.sort((a, b) => {
+                        if (a[sortBy] < b[sortBy]) return -1;
+                        if (a[sortBy] > b[sortBy]) return 1;
+                        return 0;
+                    });
+
+                    // Render filtered and sorted cinemas
+                    const tableBody = document.querySelector('#cinemas tbody');
+                    tableBody.innerHTML = '';
+                    filteredCinemas.forEach(cinema => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${cinema.name}</td>
+                            <td>${cinema.address}</td>
+                            <td>
+                                <button onclick="editCinema(${cinema.cinema_id})">Edit</button>
+                                <button onclick="deleteCinema(${cinema.cinema_id})">Delete</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(error => console.error('Error applying filters:', error));
+        }
+
+        function deleteCinema(cinemaId) {
+            if (confirm('Are you sure you want to delete this cinema?')) {
+                fetch(`/cinema/delete/${cinemaId}`, {
+                    method: 'DELETE',
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to delete cinema');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Cinema deleted successfully:', data);
+                    fetchCinemas(); // Refresh cinemas list after deletion
+                })
+                .catch(error => console.error('Error deleting cinema:', error));
+            }
+        }
+
+        function openModal() {
+            const modal = document.getElementById('addCinemaModal');
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('addCinemaModal');
+            modal.style.display = 'none';
+        }
+
+        function editCinema(cinemaId) {
+            // Placeholder for edit functionality (to be implemented)
+            console.log(`Editing cinema with ID ${cinemaId}`);
+        }
+
+        function deleteCinema(cinemaId) {
+            // Placeholder for delete functionality (to be implemented)
+            console.log(`Deleting cinema with ID ${cinemaId}`);
+        }
+
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchCinemas();
+
+            const addCinemaBtn = document.getElementById('addCinemaBtn');
+            const closeBtn = document.querySelector('.close');
+            const modal = document.getElementById('addCinemaModal');
+
+            addCinemaBtn.addEventListener('click', openModal);
+            closeBtn.addEventListener('click', closeModal);
+            window.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+
+            const addCinemaForm = document.getElementById('addCinemaForm');
+            addCinemaForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                const formData = new FormData(addCinemaForm);
+                const newCinema = {
+                    name: formData.get('name'),
+                    address: formData.get('address')
+                };
+
+                fetch('/cinema/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(newCinema)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('New cinema added:', data);
+                    closeModal();
+                    fetchCinemas(); // Refresh cinemas list after adding
+                })
+                .catch(error => console.error('Error adding new cinema:', error));
+            });
+        });
+    </script>
+</body>
+</html>
